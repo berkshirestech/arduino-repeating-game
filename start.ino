@@ -1,21 +1,27 @@
 const int buttonPin = 2;     // the number of the pushbutton pin
 const int ledPin =  13;      // the number of the LED pin
+const int ACTION_LENGTH = 17;
+struct LedAction {
+  long length;
+  int type; // 0 = pause 1 = flash
+};
 
-long flashLength = 100; // milliseconds
-long pauses[] = { 1000, 250, 250, 500, 250};
+LedAction ledActions[ACTION_LENGTH] = {};
 int count = 0;
 bool isRecording = true;
 
 void playback()
 {
-  int numPauses = sizeof(pauses)/sizeof(pauses[0]);
+  int numActions = sizeof(ledActions)/sizeof(ledActions[0]);
 
-  for (int i = 0; i < numPauses; i++)
-  {
-    flash();
-    delay(pauses[i]);
+  for (int i = 0; i < numActions; i++)  {
+    LedAction action = ledActions[i];
+    if(action.type == 1) { // pause
+      delay(action.length);
+    } else {
+      flash(action.length);
+    }
   }
-  flash();
 }
 
 int lastTime;
@@ -25,20 +31,27 @@ void record()
   if(digitalRead(buttonPin) == LOW){
     int currTime = millis();
     if(count > 0) {
-      pauses[count] = currTime - lastTime;
+      LedAction pause = {currTime - lastTime, 0};  
+      ledActions[count] = pause;
+      count++; 
     }
 
     lastTime = currTime;
+    long holdStart = millis();
     while(digitalRead(buttonPin) == LOW);
+    
+    LedAction flash = {millis() - holdStart, 1};  
+    ledActions[count] = flash; 
     count++;
-    if(count == 6){
+    
+    if(count == ACTION_LENGTH){
         count = 0;
         isRecording = false;
     }
   }
 }
 
-void flash()
+void flash(long flashLength)
 {
  digitalWrite(ledPin, HIGH);
  delay(flashLength);

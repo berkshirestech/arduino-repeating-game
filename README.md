@@ -16,12 +16,9 @@ increase our knowledge of Arduino programming and board design.
 ### Components
 
 - [An Arduino sketch file](start.ino)
-- [A Fritizing diagram for constructing the board](diagram.fzz) (NOT functional
-  at the moment)
+- [A Fritizing diagram for constructing the board](diagram.fzz)
 
 ### Diagram
-
-Note, this isn't the correct diagram yet.
 
 ![](diagram.png)
 
