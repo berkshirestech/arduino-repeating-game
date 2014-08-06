@@ -1,9 +1,16 @@
 const int buttonPin = 2;     // the number of the pushbutton pin
-const int ledPin =  13;      // the number of the LED pin
+const int outputLedPin = 13;      // the number of the LED pin
+const int recordingLedPin = 12;
+const int playbackLedPin = 11;
 const int ACTION_LENGTH = 17;
+
+enum ActionType {
+  FLASH, PAUSE
+};
+
 struct LedAction {
   long length;
-  int type; // 0 = pause 1 = flash
+  ActionType type;
 };
 
 LedAction ledActions[ACTION_LENGTH] = {};
@@ -16,7 +23,7 @@ void playback()
 
   for (int i = 0; i < numActions; i++)  {
     LedAction action = ledActions[i];
-    if(action.type == 1) { // pause
+    if(action.type == PAUSE) {
       delay(action.length);
     } else {
       flash(action.length);
@@ -29,18 +36,18 @@ int lastTime;
 void record()
 {
   if(digitalRead(buttonPin) == LOW){
-    int currTime = millis();
     if(count > 0) {
-      LedAction pause = {currTime - lastTime, 0};  
+      int currTime = millis();
+      LedAction pause = {currTime - lastTime, PAUSE};  
       ledActions[count] = pause;
       count++; 
     }
 
-    lastTime = currTime;
     long holdStart = millis();
     while(digitalRead(buttonPin) == LOW);
-    
-    LedAction flash = {millis() - holdStart, 1};  
+    long holdEnd = millis();
+    lastTime = holdEnd;
+    LedAction flash = {holdEnd - holdStart, FLASH};  
     ledActions[count] = flash; 
     count++;
     
@@ -51,25 +58,43 @@ void record()
   }
 }
 
+void flashLed(int pin, long length) {
+ digitalWrite(pin, HIGH);
+ delay(length);
+ digitalWrite(pin, LOW);
+}
+
+void turnOnLed(int pin) {
+  digitalWrite(pin, HIGH);
+}
+
+void turnOffLed(int pin) {
+  digitalWrite(pin, LOW);
+}
+
 void flash(long flashLength)
 {
- digitalWrite(ledPin, HIGH);
- delay(flashLength);
- digitalWrite(ledPin, LOW);
+  flashLed(outputLedPin, flashLength);
 }
 
 void setup() {
   // open the serial port at 9600 bps:
   Serial.begin(9600);
   // initialize the pins
-  pinMode(ledPin, OUTPUT);
+  pinMode(outputLedPin, OUTPUT);
   pinMode(buttonPin, INPUT);
+  pinMode(recordingLedPin, OUTPUT);
+  pinMode(playbackLedPin, OUTPUT);
 }
 
 void loop() {
   if(isRecording){
+    turnOffLed(playbackLedPin);
+    turnOnLed(recordingLedPin);
     record();
   }else{
+    turnOffLed(recordingLedPin);
+    turnOnLed(playbackLedPin);
     playback();
     isRecording = true;
   }
